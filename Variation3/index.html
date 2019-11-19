@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<head>
+    <title>Variation 3</title>
+</head>
+<style>
+
+    body {
+        margin: 0;
+        background: #222;
+        min-width: 960px;
+    }
+
+    rect {
+        fill: none;
+        pointer-events: all;
+    }
+
+    circle {
+        fill: none;
+        stroke-width: 2.5px;
+    }
+
+</style>
+<body>
+<script src="d3.v5-9-1.js"></script>
+<script>
+    d3.csv("dataSet.csv", function(d) {
+        return {
+            totalVictims: +d["Total victims"],
+            mentalHealth: d["Mental Health Issues"],
+            injured: +d.Injured,
+            policeManKilled: +d["Policeman Killed"],
+            fatalities: +d.Fatalities
+        };
+    }).then(function(data){
+        /*
+* More data processing, the tedious way
+*
+*/
+        var sumInjuredNoMentalHealth = 0;
+        var sumFatalitiesNoMentalHealth = 0;
+        var sumPMKilledNoMentalHealth = 0;
+        var numberOfShootersDiagnosedNo = 0;
+        for(i =0; i < data.length; i++)
+        {
+            if(data[i].mentalHealth === "No")
+            {
+                sumInjuredNoMentalHealth = sumInjuredNoMentalHealth + data[i].injured;
+                sumFatalitiesNoMentalHealth = sumFatalitiesNoMentalHealth + data[i].fatalities;
+                sumPMKilledNoMentalHealth = sumPMKilledNoMentalHealth + data[i].policeManKilled;
+                numberOfShootersDiagnosedNo += 1;
+            }
+        }
+
+        var sumInjuredYesMentalHealth = 0;
+        var sumFatalitiesYesMentalHealth = 0;
+        var sumPMKilledYesMentalHealth = 0;
+        var numberOfShootersDiagnosedYes = 0;
+        for(i =0; i < data.length; i++)
+        {
+            if(data[i].mentalHealth === "Yes")
+            {
+                sumInjuredYesMentalHealth = sumInjuredYesMentalHealth + data[i].injured;
+                sumFatalitiesYesMentalHealth = sumFatalitiesYesMentalHealth + data[i].fatalities;
+                sumPMKilledYesMentalHealth = sumPMKilledYesMentalHealth + data[i].policeManKilled;
+                numberOfShootersDiagnosedYes += 1;
+            }
+        }
+
+        var sumInjuredUnclearMentalHealth = 0;
+        var sumFatalitiesUnclearMentalHealth = 0;
+        var sumPMKilledUnclearMentalHealth = 0;
+        var numberOfShootersDiagnosedUnclear = 0;
+        for(i =0; i < data.length; i++)
+        {
+            if(data[i].mentalHealth === "Unclear")
+            {
+                sumInjuredUnclearMentalHealth = sumInjuredUnclearMentalHealth + data[i].injured;
+                sumFatalitiesUnclearMentalHealth = sumFatalitiesUnclearMentalHealth + data[i].fatalities;
+                sumPMKilledUnclearMentalHealth = sumPMKilledUnclearMentalHealth + data[i].policeManKilled;
+                numberOfShootersDiagnosedUnclear +=1;
+            }
+        }
+
+        var sumInjuredUnknownMentalHealth = 0;
+        var sumFatalitiesUnknownMentalHealth = 0;
+        var sumPMKilledUnknownMentalHealth = 0;
+        var numberOfShootersDiagnosedUnknown = 0;
+        for(i =0; i < data.length; i++)
+        {
+            if(data[i].mentalHealth === "Unknown")
+            {
+                sumInjuredUnknownMentalHealth = sumInjuredUnknownMentalHealth + data[i].injured;
+                sumFatalitiesUnknownMentalHealth = sumFatalitiesUnknownMentalHealth + data[i].fatalities;
+                sumPMKilledUnknownMentalHealth = sumPMKilledUnknownMentalHealth + data[i].policeManKilled;
+                numberOfShootersDiagnosedUnknown +=1;
+            }
+        }
+        var newData = [
+            {mentalHealth:"No", injured: sumInjuredNoMentalHealth, fatalities: sumFatalitiesNoMentalHealth, total:
+                    sumInjuredNoMentalHealth + sumFatalitiesNoMentalHealth,
+                totalPoliceKilled: sumPMKilledNoMentalHealth,
+                totalOccurences: numberOfShootersDiagnosedNo},
+            {mentalHealth:"Yes", injured: sumInjuredYesMentalHealth, fatalities: sumFatalitiesYesMentalHealth, total:
+                    sumInjuredYesMentalHealth + sumFatalitiesYesMentalHealth,
+                totalPoliceKilled: sumPMKilledYesMentalHealth,
+                totalOccurences: numberOfShootersDiagnosedYes},
+            {mentalHealth:"Unclear", injured: sumInjuredUnclearMentalHealth, fatalities: sumFatalitiesUnclearMentalHealth, total:
+                    sumInjuredUnclearMentalHealth + sumFatalitiesUnclearMentalHealth,
+                totalPoliceKilled: sumPMKilledUnclearMentalHealth,
+                totalOccurences: numberOfShootersDiagnosedUnclear},
+            {mentalHealth:"Unknown", injured: sumInjuredUnknownMentalHealth, fatalities: sumFatalitiesUnknownMentalHealth, total:
+                    sumInjuredUnknownMentalHealth + sumFatalitiesUnknownMentalHealth,
+                totalPoliceKilled: sumPMKilledUnknownMentalHealth,
+                totalOccurences: numberOfShootersDiagnosedUnknown}
+
+        ];
+        var width = Math.max(1080, innerWidth),
+            height = Math.max(1080, innerHeight);
+
+        var i = 0;
+
+        var svg = d3.select("body").append("svg")
+            .attr("width", width)
+            .attr("height", height);
+
+        svg.append("rect")
+            .attr("width", width)
+            .attr("height", height);
+
+        var x = 10;
+        var interval = 1000;
+
+        for (i = 0; i <= newData[0].totalOccurences; i++) {
+            setTimeout(function () {
+
+                svg.insert("circle", "rect")
+                    .attr("cx", 200)
+                    .attr("cy", 200)
+                    .attr("r", 1e-6)
+                    .style("stroke", "#ccff00")
+                    .style("stroke-opacity", 1)
+                    .transition()
+                    .duration(20000)
+                    .ease(Math.sqrt)
+                    .attr("r", 100)
+                    .style("stroke-opacity", 1e-6)
+                    .remove();
+
+            }, i * interval)
+        }
+
+        for (i = 0; i < newData[1].totalOccurences; i++) {
+            setTimeout(function () {
+                // Do Something
+                svg.insert("circle", "rect")
+                    .attr("cx", 900)
+                    .attr("cy", 200)
+                    .attr("r", 1e-6)
+                    .style("stroke", "#ff0000")
+                    .style("stroke-opacity", 1)
+                    .transition()
+                    .duration(20000)
+                    .ease(Math.sqrt)
+                    .attr("r", 100)
+                    .style("stroke-opacity", 1e-6)
+                //.remove();
+
+            }, i * interval)
+        }
+
+        for (i = 0; i < newData[2].totalOccurences; i++) {
+            setTimeout(function () {
+                svg.insert("circle", "rect")
+                    .attr("cx", 900)
+                    .attr("cy", 600)
+                    .attr("r", 1e-6)
+                    .style("stroke", "#89cff0")
+                    .style("stroke-opacity", 1)
+                    .transition()
+                    .duration(20000)
+                    .ease(Math.sqrt)
+                    .attr("r", 100)
+                    .style("stroke-opacity", 1e-6)
+                //.remove();
+
+            }, i * interval)
+        }
+
+        for (i = 0; i < newData[3].totalOccurences; i++) {
+            setTimeout(function () {
+
+                svg.insert("circle", "rect")
+                    .attr("cx", 200)
+                    .attr("cy", 600)
+                    .attr("r", 1e-6)
+                    .style("stroke", "#f4c2c2")
+                    .style("stroke-opacity", 1)
+                    .transition()
+                    .duration(20000)
+                    .ease(Math.sqrt)
+                    .attr("r", 100)
+                    .style("stroke-opacity", 1e-6)
+                //.remove();
+
+            }, i * interval)
+        }
+
+        svg.append("text")
+            .attr("x", 550 )
+            .attr("y",  50 )
+            .style("text-anchor", "middle")
+            .style('fill', 'white')
+            .attr("font-family", "Gill Sans", "Gill Sans MT")
+            .attr("font-size", "1.4em")
+            .text("Are shooters more likely to be diagnosed with a mental health issue if they kill police officers?");
+
+        //Creating legend
+        svg.append("text")
+            .attr("x", 550 )
+            .attr("y",  300 )
+            .style("text-anchor", "middle")
+            .attr("font-family", "Gill Sans", "Gill Sans MT")
+            .attr("font-size", "1.2em")
+            .style('fill', 'white')
+            .text("Mental Health Issue?");
+        svg.append("circle")
+            .attr("cx",520)
+            .attr("cy",330)
+            .attr("r", 6)
+            .style("fill", "#ccff00");
+        svg.append("circle")
+            .attr("cx",520)
+            .attr("cy",360)
+            .attr("r", 6)
+            .style("fill", "#ff0000");
+        svg.append("text")
+            .attr("x", 550)
+            .attr("y", 330)
+            .text("No")
+            .style('fill', 'white')
+            .style("font-size", "15px")
+            .attr("font-family", "Gill Sans", "Gill Sans MT")
+            .attr("alignment-baseline","middle");
+        svg.append("text")
+            .attr("x", 550)
+            .attr("y", 360)
+            .text("Yes")
+            .style('fill', 'white')
+            .style("font-size", "15px")
+            .attr("font-family", "Gill Sans", "Gill Sans MT")
+            .attr("alignment-baseline","middle");
+        svg.append("circle")
+            .attr("cx",520)
+            .attr("cy",390)
+            .attr("r", 6)
+            .style("fill", "#89cff0");
+        svg.append("circle")
+            .attr("cx",520)
+            .attr("cy",420)
+            .attr("r", 6)
+            .style("fill", "#f4c2c2");
+        svg.append("text")
+            .attr("x", 550)
+            .attr("y", 390)
+            .text("Unclear")
+            .style('fill', 'white')
+            .style("font-size", "15px")
+            .attr("font-family", "Gill Sans", "Gill Sans MT")
+            .attr("alignment-baseline","middle");
+        svg.append("text")
+            .attr("x", 550)
+            .attr("y", 420)
+            .text("Unknown")
+            .style('fill', 'white')
+            .style("font-size", "15px")
+            .attr("font-family", "Gill Sans", "Gill Sans MT")
+            .attr("alignment-baseline","middle");
+        svg.append("text")
+            .attr("x", 475)
+            .attr("y", 450)
+            .text("*One Pulse = One Diagnosis")
+            .style('fill', 'white')
+            .style("font-size", "12px")
+            .attr("font-family", "Gill Sans", "Gill Sans MT")
+            .attr("alignment-baseline","middle");
+
+
+        svg.append("text")
+            .attr("x", 125)
+            .attr("y", 330)
+            .text("Number of Shooters Diagnosed: " + newData[0].totalOccurences)
+            .style('fill', 'white')
+            .style("font-size", "15px")
+            .attr("font-family", "Gill Sans", "Gill Sans MT")
+            .attr("alignment-baseline","middle");
+
+        svg.append("text")
+            .attr("x", 125)
+            .attr("y", 360)
+            .text("Number of Police Killed: " + newData[0].totalPoliceKilled)
+            .style('fill', 'white')
+            .style("font-size", "15px")
+            .attr("font-family", "Gill Sans", "Gill Sans MT")
+            .attr("alignment-baseline","middle");
+
+
+        svg.append("text")
+            .attr("x", 825)
+            .attr("y", 330)
+            .text("Number of Shooters Diagnosed: " + newData[1].totalOccurences)
+            .style('fill', 'white')
+            .style("font-size", "15px")
+            .attr("font-family", "Gill Sans", "Gill Sans MT")
+            .attr("alignment-baseline","middle");
+
+        svg.append("text")
+            .attr("x", 825)
+            .attr("y", 360)
+            .text("Number of Police Killed: " + newData[1].totalPoliceKilled)
+            .style('fill', 'white')
+            .style("font-size", "15px")
+            .attr("font-family", "Gill Sans", "Gill Sans MT")
+            .attr("alignment-baseline","middle");
+
+        svg.append("text")
+            .attr("x", 825)
+            .attr("y", 730)
+            .text("Number of Shooters Diagnosed: " + newData[2].totalOccurences)
+            .style('fill', 'white')
+            .style("font-size", "15px")
+            .attr("font-family", "Gill Sans", "Gill Sans MT")
+            .attr("alignment-baseline","middle");
+
+        svg.append("text")
+            .attr("x", 825)
+            .attr("y", 760)
+            .text("Number of Police Killed: " + newData[2].totalPoliceKilled)
+            .style('fill', 'white')
+            .style("font-size", "15px")
+            .attr("font-family", "Gill Sans", "Gill Sans MT")
+            .attr("alignment-baseline","middle");
+
+        svg.append("text")
+            .attr("x", 125)
+            .attr("y", 730)
+            .text("Number of Shooters Diagnosed: " + newData[3].totalOccurences)
+            .style('fill', 'white')
+            .style("font-size", "15px")
+            .attr("font-family", "Gill Sans", "Gill Sans MT")
+            .attr("alignment-baseline","middle");
+
+        svg.append("text")
+            .attr("x", 125)
+            .attr("y", 760)
+            .text("Number of Police Killed: " + newData[3].totalPoliceKilled)
+            .style('fill', 'white')
+            .style("font-size", "15px")
+            .attr("font-family", "Gill Sans", "Gill Sans MT")
+            .attr("alignment-baseline","middle");
+    });
+
+</script>

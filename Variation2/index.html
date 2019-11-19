@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Variation 2</title>
+    <style>
+        body {
+            font: 12px sans-serif;
+        }
+        svg {
+            margin: 0px auto;
+            display: block;
+            background-color: #36454f;
+        }
+
+        path.arc {
+            opacity: 0.9;
+            transition: opacity 0.5s;
+        }
+
+        path.arc:hover {
+            opacity: 0.7;
+        }
+
+        .axis line, .axis circle  {
+            stroke: #cccccc;
+            stroke-width: 1px
+        }
+
+        .axis circle {
+            fill: none;
+        }
+
+        .r.axis text {
+            text-anchor: end
+        }
+
+        .tooltip {
+            position: absolute;
+            display: none;
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 3px;
+            box-shadow: -3px 3px 15px #888;
+            color: white;
+            padding: 6px;
+        }
+    </style>
+    <script src="d3.v5-9-1.js"></script>
+</head>
+<body>
+<script>
+    const width = 960,
+        height = 500,
+        chartRadius = height / 2 - 40;
+
+    const color = d3.scaleOrdinal(d3.schemeCategory10);
+
+    let svg = d3.select('body').append('svg')
+        .attr('width', 1920)
+        .attr('height', 1920)
+        .append('g')
+        .attr("fill", "white")
+        .attr('transform', 'translate(' + width / 2 + ',' + height / 2 + ')')
+
+    svg.append("text")
+        .attr("x", 50 )
+        .attr("y",  250 )
+        .style("text-anchor", "middle")
+        .attr("font-family", "Gill Sans", "Gill Sans MT")
+        .attr("font-size", "1.4em")
+        .text("Are shooters more likely to be diagnosed with a mental health issue if they kill police officers?");
+    //Creating legend
+    svg.append("text")
+        .attr("x", 430 )
+        .attr("y",  -150 )
+        .style("text-anchor", "middle")
+        .attr("font-family", "Gill Sans", "Gill Sans MT")
+        .attr("font-size", "1.2em")
+        .text("Mental Health Issue?");
+    svg.append("circle")
+        .attr("cx",400)
+        .attr("cy",-120)
+        .attr("r", 6)
+        .style("fill", "#ffa500");
+    svg.append("circle")
+        .attr("cx",400)
+        .attr("cy",-90)
+        .attr("r", 6)
+        .style("fill", "#1f77b4");
+    svg.append("text")
+        .attr("x", 420)
+        .attr("y", -120)
+        .text("Yes")
+        .style("font-size", "15px")
+        .attr("font-family", "Gill Sans", "Gill Sans MT")
+        .attr("alignment-baseline","middle");
+    svg.append("text")
+        .attr("x", 420)
+        .attr("y", -90)
+        .text("No")
+        .style("font-size", "15px")
+        .attr("font-family", "Gill Sans", "Gill Sans MT")
+        .attr("alignment-baseline","middle");
+
+    svg.append("circle")
+        .attr("cx",400)
+        .attr("cy",-60)
+        .attr("r", 6)
+        .style("fill", "#228b22");
+    svg.append("circle")
+        .attr("cx",400)
+        .attr("cy",-30)
+        .attr("r", 6)
+        .style("fill", "#ff0000");
+    svg.append("text")
+        .attr("x", 420)
+        .attr("y", -60)
+        .text("Unclear")
+        .style("font-size", "15px")
+        .attr("font-family", "Gill Sans", "Gill Sans MT")
+        .attr("alignment-baseline","middle");
+    svg.append("text")
+        .attr("x", 420)
+        .attr("y", -30)
+        .text("Unknown")
+        .style("font-size", "15px")
+        .attr("font-family", "Gill Sans", "Gill Sans MT")
+        .attr("alignment-baseline","middle");
+
+    svg.append("text")
+        .attr("x", 350)
+        .attr("y", 0)
+        .text("Numbers circling the radial chart")
+        .style("font-size", "15px")
+        .attr("font-family", "Gill Sans", "Gill Sans MT")
+        .attr("alignment-baseline","middle");
+
+    svg.append("text")
+        .attr("x", 350)
+        .attr("y", 30)
+        .text("represent the number of shooters diagnosed.")
+        .style("font-size", "15px")
+        .attr("font-family", "Gill Sans", "Gill Sans MT")
+        .attr("alignment-baseline","middle");
+
+    let tooltip = d3.select('body').append('div')
+        .attr('class', 'tooltip');
+
+    const PI = Math.PI,
+        arcMinRadius = 10,
+        arcPadding = 10,
+        labelPadding = -5,
+        numTicks = 10;
+
+
+    d3.csv('dataSet.csv', function(d) {
+        return {
+            totalVictims: +d["Total victims"],
+            mentalHealth: d["Mental Health Issues"],
+            injured: +d.Injured,
+            policeManKilled: +d["Policeman Killed"],
+            fatalities: +d.Fatalities
+        };
+    }).then(function(data){
+        /*
+        * More data processing, the tedious way
+        *
+        */
+        var sumInjuredNoMentalHealth = 0;
+        var sumFatalitiesNoMentalHealth = 0;
+        var sumPMKilledNoMentalHealth = 0;
+        var numberOfShootersDiagnosedNo = 0;
+        for(i =0; i < data.length; i++)
+        {
+            if(data[i].mentalHealth === "No")
+            {
+                sumInjuredNoMentalHealth = sumInjuredNoMentalHealth + data[i].injured;
+                sumFatalitiesNoMentalHealth = sumFatalitiesNoMentalHealth + data[i].fatalities;
+                sumPMKilledNoMentalHealth = sumPMKilledNoMentalHealth + data[i].policeManKilled;
+                numberOfShootersDiagnosedNo += 1;
+            }
+        }
+
+        var sumInjuredYesMentalHealth = 0;
+        var sumFatalitiesYesMentalHealth = 0;
+        var sumPMKilledYesMentalHealth = 0;
+        var numberOfShootersDiagnosedYes = 0;
+        for(i =0; i < data.length; i++)
+        {
+            if(data[i].mentalHealth === "Yes")
+            {
+                sumInjuredYesMentalHealth = sumInjuredYesMentalHealth + data[i].injured;
+                sumFatalitiesYesMentalHealth = sumFatalitiesYesMentalHealth + data[i].fatalities;
+                sumPMKilledYesMentalHealth = sumPMKilledYesMentalHealth + data[i].policeManKilled;
+                numberOfShootersDiagnosedYes += 1;
+            }
+        }
+
+        var sumInjuredUnclearMentalHealth = 0;
+        var sumFatalitiesUnclearMentalHealth = 0;
+        var sumPMKilledUnclearMentalHealth = 0;
+        var numberOfShootersDiagnosedUnclear = 0;
+        for(i =0; i < data.length; i++)
+        {
+            if(data[i].mentalHealth === "Unclear")
+            {
+                sumInjuredUnclearMentalHealth = sumInjuredUnclearMentalHealth + data[i].injured;
+                sumFatalitiesUnclearMentalHealth = sumFatalitiesUnclearMentalHealth + data[i].fatalities;
+                sumPMKilledUnclearMentalHealth = sumPMKilledUnclearMentalHealth + data[i].policeManKilled;
+                numberOfShootersDiagnosedUnclear +=1;
+            }
+        }
+
+        var sumInjuredUnknownMentalHealth = 0;
+        var sumFatalitiesUnknownMentalHealth = 0;
+        var sumPMKilledUnknownMentalHealth = 0;
+        var numberOfShootersDiagnosedUnknown = 0;
+        for(i =0; i < data.length; i++)
+        {
+            if(data[i].mentalHealth === "Unknown")
+            {
+                sumInjuredUnknownMentalHealth = sumInjuredUnknownMentalHealth + data[i].injured;
+                sumFatalitiesUnknownMentalHealth = sumFatalitiesUnknownMentalHealth + data[i].fatalities;
+                sumPMKilledUnknownMentalHealth = sumPMKilledUnknownMentalHealth + data[i].policeManKilled;
+                numberOfShootersDiagnosedUnknown +=1;
+            }
+        }
+        var newData = [
+            {mentalHealth:"No", injured: sumInjuredNoMentalHealth, fatalities: sumFatalitiesNoMentalHealth, total:
+                    sumInjuredNoMentalHealth + sumFatalitiesNoMentalHealth,
+                    totalPoliceKilled: sumPMKilledNoMentalHealth,
+                    totalOccurences: numberOfShootersDiagnosedNo},
+            {mentalHealth:"Yes", injured: sumInjuredYesMentalHealth, fatalities: sumFatalitiesYesMentalHealth, total:
+                    sumInjuredYesMentalHealth + sumFatalitiesYesMentalHealth,
+            totalPoliceKilled: sumPMKilledYesMentalHealth,
+                totalOccurences: numberOfShootersDiagnosedYes},
+            {mentalHealth:"Unclear", injured: sumInjuredUnclearMentalHealth, fatalities: sumFatalitiesUnclearMentalHealth, total:
+                    sumInjuredUnclearMentalHealth + sumFatalitiesUnclearMentalHealth,
+            totalPoliceKilled: sumPMKilledUnclearMentalHealth,
+                totalOccurences: numberOfShootersDiagnosedUnclear},
+            {mentalHealth:"Unknown", injured: sumInjuredUnknownMentalHealth, fatalities: sumFatalitiesUnknownMentalHealth, total:
+                    sumInjuredUnknownMentalHealth + sumFatalitiesUnknownMentalHealth,
+            totalPoliceKilled: sumPMKilledUnknownMentalHealth,
+                totalOccurences: numberOfShootersDiagnosedUnknown}
+
+        ];
+        let scale = d3.scaleLinear()
+            .domain([0, d3.max(newData, d => d.totalOccurences) * 1.1])
+            .range([0, 2 * PI]);
+
+        let ticks = scale.ticks(numTicks).slice(0, -1);
+        let keys = newData.map((d, i) => d.mentalHealth);
+        //number of arcs
+        const numArcs = keys.length;
+        const arcWidth = (chartRadius - arcMinRadius - numArcs * arcPadding) / numArcs;
+
+        let arc = d3.arc()
+            .innerRadius((d, i) => getInnerRadius(i))
+            .outerRadius((d, i) => getOuterRadius(i))
+            .startAngle(0)
+            .endAngle((d, i) => scale(d))
+
+        let radialAxis = svg.append('g')
+            .attr('class', 'r axis')
+            .selectAll('g')
+            .data(newData)
+            .enter().append('g');
+
+        radialAxis.append('circle')
+            .attr('r', (d, i) => getOuterRadius(i) + arcPadding);
+
+        radialAxis.append('text')
+            .attr('x', labelPadding)
+            .attr('y', (d, i) => -getOuterRadius(i) + arcPadding)
+            .attr("font-family", "Gill Sans", "Gill Sans MT")
+            .attr("font-size", "1,0em")
+            .text(d => d.mentalHealth);
+
+        let axialAxis = svg.append('g')
+            .attr('class', 'a axis')
+            .selectAll('g')
+            .data(ticks)
+            .enter().append('g')
+            .attr('transform', d => 'rotate(' + (rad2deg(scale(d)) - 90) + ')');
+
+        axialAxis.append('line')
+            .attr('x2', chartRadius);
+
+        axialAxis.append('text')
+            .attr('x', chartRadius + 10)
+            .style('text-anchor', d => (scale(d) >= PI && scale(d) < 2 * PI ? 'end' : null))
+
+            .attr('transform', d => 'rotate(' + (90 - rad2deg(scale(d))) + ',' + (chartRadius + 10) + ',0)')
+            .text(d => d);
+
+        //data arcs
+        let arcs = svg.append('g')
+            .attr('class', 'data')
+            .selectAll('path')
+            .data(newData)
+            .enter().append('path')
+            .attr('class', 'arc')
+            .style('fill', (d, i) => color(i))
+
+        arcs.transition()
+            .delay((d, i) => i * 200)
+            .duration(1000)
+            .attrTween('d', arcTween);
+
+        arcs.on('mousemove', showTooltip)
+        arcs.on('mouseout', hideTooltip)
+
+
+        function arcTween(d, i) {
+            let interpolate = d3.interpolate(0, d.totalOccurences);
+            return t => arc(interpolate(t), i);
+        }
+
+        function showTooltip(d) {
+            tooltip.style('left', (d3.event.pageX + 10) + 'px')
+                .style('top', (d3.event.pageY - 25) + 'px')
+                .style('display', 'inline-block')
+                .html("Number of diagnosis: " + d.totalOccurences + "<br>" +
+                    "Number of police officers killed: " + d.totalPoliceKilled);
+        }
+
+        function hideTooltip() {
+            tooltip.style('display', 'none');
+        }
+
+        function rad2deg(angle) {
+            return angle * 180 / PI;
+        }
+
+        function getInnerRadius(index) {
+            return arcMinRadius + (numArcs - (index + 1)) * (arcWidth + arcPadding);
+        }
+
+        function getOuterRadius(index) {
+            return getInnerRadius(index) + arcWidth;
+        }
+    });
+</script>
+</body>
+</html>
